@@ -1,5 +1,4 @@
 # CECS 327 - Interprocess Communication (Client)
-# Leila Nunez, 028574375
 
 import socket
 import ipaddress
