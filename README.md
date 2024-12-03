@@ -20,3 +20,7 @@ By completing this project, we achieved the following:
   - GitHub for version control and code sharing.
   - Cloud deployment platform (if applicable).
 
+  ## Running Files
+To run the client, server, and database, simply enter the following into command prompt sessions (2):
+1. python3 /path/to/echoServer.py
+2. python3 /path/to/echoClient.py
