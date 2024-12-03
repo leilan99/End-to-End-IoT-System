@@ -5,7 +5,7 @@ import certifi  # pip install certifi
 # Constants
 DB_NAME = "test"  # Change to your database name
 CONNECTION_URL = (
-    "mongodb+srv://ninjanick2010:nicky562@cluster0.4cmkhbm.mongodb.net/?retryWrites=true&w=majority"
+    "mongodb+srv://leilanunez01:csulbCECS327@cluster0.q6mnv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 )  # Replace with your database URL
 SENSOR_TABLE = "sensor data"  # Change this to your sensor data table
 TIME_CUTOFF_MINUTES = 0  # Set how many minutes to allow for filtering
