@@ -13,7 +13,7 @@ def set_port():
             if port < 0 or port>65535:
                 raise ValueError
             else:
-                break
+                return port
 
         except ValueError:
             print("Port number not valid. Try again.") # Ensures user input matches declared format
@@ -30,6 +30,10 @@ def listen_tcp(ip, port):
     TCPSocket.listen(5)
     print(f"Server: {ip}:{port} - Listening...")
     return TCPSocket
+
+def connect_data() -> []:
+    import MongoDBConnection as mongo
+    return mongo.QueryDatabase();
 
 def main():
     # Print a message indicating the server is starting
@@ -55,9 +59,12 @@ def main():
 
         # Display the client's message
         print(f"Client message: {clientMessage.decode('utf-8')}")
+
+        # Receive server data
+        serverData = connect_data()
         
         # Send the message back to the client, converted to uppercase
-        incomingSocket.send(clientMessage.upper())
+        incomingSocket.sendall(str(serverData).encode())
 
     # Close the connection to the client
     incomingSocket.close()
