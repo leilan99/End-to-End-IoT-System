@@ -1,32 +1,20 @@
-# CECS 327 - Interprocess Communication (Server)
-
 import socket
-import ipaddress
-import errno
-import pytz
-import Mongo
-from datetime import datetime
-from typing import List
-
+from Mongo import query_database  # Import the updated query_database function
 
 def set_port():
     # Bind socket to the IP address and server port
     while True:
         try:
             port = int(input("\nEnter port number: "))
-
-            if port < 0 or port>65535:
+            if port < 0 or port > 65535:
                 raise ValueError
-            else:
-                return port
-
+            return port
         except ValueError:
-            print("Port number not valid. Try again.") # Ensures user input matches declared format
-        
+            print("Port number not valid. Try again.")
+
 def create_socket():
     # Create TCP socket
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 
 def listen_tcp(ip, port):
     TCPSocket = create_socket()
@@ -36,31 +24,43 @@ def listen_tcp(ip, port):
     print(f"Server: {ip}:{port} - Listening...")
     return TCPSocket
 
-def connect_data() -> List:
-    return Mongo.query_database();
+def process_query(query):
+    """Process the client's query and fetch the relevant data."""
+    try:
+        if query == "What is the average moisture inside my kitchen fridge in the past three hours?":
+            documents = query_database("Table1_virtual", topic="home_to_kitchen", field="Moisture Meter - MoistureMeter2", hours=3)
+            if documents:
+                average_moisture = sum(map(float, documents)) / len(documents)
+                return f"The average moisture inside your kitchen fridge in the past three hours is {average_moisture:.2f}%."
+            else:
+                return "No moisture data available for the past three hours."
 
-def convert_to_rh(moisture):
-    return moisture * 0.75
+        elif query == "What is the average water consumption per cycle in my smart dishwasher?":
+            documents = query_database("Table1_virtual", topic="home_to_kitchen", field="Water Consumption", hours=3)
+            if documents:
+                average_water_consumption = sum(map(float, documents)) / len(documents)
+                return f"The average water consumption per cycle in your smart dishwasher is {average_water_consumption:.2f} liters."
+            else:
+                return "No water consumption data available."
 
-def convert_to_imperial_units(data):
-    data['value'] = data['value'] * 0.264172  # Example: converting liters to gallons
-    return data
+        elif query == "Which device consumed more electricity among my three IoT devices (two refrigerators and a dishwasher)?":
+            devices = {
+                "Fridge 1": "FridgeBoard",
+                "Fridge 2": "FridgeBoard2",
+                "Dishwasher": "DishwasherBoard"
+            }
+            consumption = {}
+            for device_name, board in devices.items():
+                documents = query_database("Table1_virtual", topic="home_to_kitchen", field="Ammeter", hours=3)
+                consumption[device_name] = sum(map(float, documents)) if documents else 0
+            max_device = max(consumption, key=consumption.get)
+            return f"The device that consumed the most electricity is {max_device} with {consumption[max_device]:.2f} kWh."
 
-def process_data(data):
-    processed_data = []
-    for item in data:
-        sensor_id, value, data_source_type, timestamp = item
-        if data_source_type == 'moisture':
-            value = convert_to_rh(value)
-        item_dict = {
-            'sensor_id': sensor_id,
-            'value': value,
-            'data_source_type': data_source_type,
-            'timestamp': timestamp.astimezone(pytz.timezone('US/Pacific'))
-        }
-        item_dict = convert_to_imperial_units(item_dict)
-        processed_data.append(item_dict)
-    return processed_data
+        else:
+            return "Invalid query."
+
+    except Exception as e:
+        return f"Error: Unable to process query. Details: {e}"
 
 def main():
     # Print a message indicating the server is starting
@@ -77,22 +77,20 @@ def main():
 
     # Loop to receive and respond to messages from the client
     while True:
-        # Receive a message from the client (up to 1024 bytes)
         clientMessage = incomingSocket.recv(1024)
 
         # If no message is received, break the loop (client has disconnected)
         if not clientMessage:
             break
 
-        # Display the client's message
-        print(f"Client message: {clientMessage.decode('utf-8')}")
+        query = clientMessage.decode('utf-8')
+        print(f"Client message: {query}")
 
-        # Receive server data
-        serverData = connect_data()
-        processedData = process_data(serverData)
-        
-        # Send the message back to the client, converted to uppercase
-        incomingSocket.sendall(str(processedData).encode())
+        # Process the query and get the response
+        response = process_query(query)
+
+        # Send the response back to the client
+        incomingSocket.sendall(response.encode())
 
     # Close the connection to the client
     incomingSocket.close()
