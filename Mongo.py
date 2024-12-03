@@ -33,15 +33,15 @@ def query_database():
         old_documents = query_to_list(sensor_table.find({"time": {"$gte": time_cutoff}}))
         current_documents = query_to_list(sensor_table.find({"time": {"$lte": time_cutoff}}))
 
-        print("Current Docs:", current_documents)
-        print("Old Docs:", old_documents)
+        # print("Current Docs:", current_documents)
+        # print("Old Docs:", old_documents)
 
         # Parse and return sensor data
         sensor_data = [
             (doc.get("sensor_id"), doc.get("value"))
             for doc in current_documents + old_documents
         ]
-        return sensor_data
+        # return sensor_data
 
     except Exception as e:
         print("Error: Unable to connect or query MongoDB.")
