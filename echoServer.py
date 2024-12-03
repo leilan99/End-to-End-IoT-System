@@ -1,5 +1,9 @@
 import socket
-from Mongo import query_database  # Import the updated query_database function
+import threading
+from Mongo import query_database
+from datetime import datetime
+import pytz
+
 
 def set_port():
     # Bind socket to the IP address and server port
@@ -16,6 +20,17 @@ def create_socket():
     # Create TCP socket
     return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+def convert_to_rh(moisture_value):
+    return moisture_value * 2.5
+
+def convert_to_pst(utc_time):
+    utc_dt = datetime.utcfromtimestamp(utc_time)
+    pst_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Pacific'))
+    return pst_dt.strftime('%Y-%m-%d %H:%M:%S')
+
+def convert_to_gallons(liters):
+    return liters * 0.264172
+
 def listen_tcp(ip, port):
     TCPSocket = create_socket()
     TCPSocket.bind((ip, port))
@@ -25,24 +40,25 @@ def listen_tcp(ip, port):
     return TCPSocket
 
 def process_query(query):
-    """Process the client's query and fetch the relevant data."""
     try:
         if query == "What is the average moisture inside my kitchen fridge in the past three hours?":
-            documents = query_database("Table1_virtual", topic="home_to_kitchen", field="Moisture Meter - MoistureMeter2", hours=3)
+            documents1 = query_database("Table1_virtual", topic="home_to_kitchen", field="Moisture Meter - MoistureMeter", hours=3)
+            documents2 = query_database("Table1_virtual", topic="home_to_kitchen", field="Moisture Meter - MoistureMeter2", hours=3)
+            documents = documents1 + documents2  # Combine the results from both fridges
             if documents:
                 average_moisture = sum(map(float, documents)) / len(documents)
-                return f"The average moisture inside your kitchen fridge in the past three hours is {average_moisture:.2f}%."
+                average_moisture_rh = convert_to_rh(average_moisture)
+                return f"The average moisture inside your kitchen fridge in the past three hours is {average_moisture_rh:.2f}% RH."
             else:
                 return "No moisture data available for the past three hours."
-
         elif query == "What is the average water consumption per cycle in my smart dishwasher?":
             documents = query_database("Table1_virtual", topic="home_to_kitchen", field="Water Consumption", hours=3)
             if documents:
                 average_water_consumption = sum(map(float, documents)) / len(documents)
-                return f"The average water consumption per cycle in your smart dishwasher is {average_water_consumption:.2f} liters."
+                average_water_gallons = convert_to_gallons(average_water_consumption)
+                return f"The average water consumption per cycle in your smart dishwasher is {average_water_gallons:.2f} gallons."
             else:
                 return "No water consumption data available."
-
         elif query == "Which device consumed more electricity among my three IoT devices (two refrigerators and a dishwasher)?":
             devices = {
                 "Fridge 1": "FridgeBoard",
@@ -51,14 +67,12 @@ def process_query(query):
             }
             consumption = {}
             for device_name, board in devices.items():
-                documents = query_database("Table1_virtual", topic="home_to_kitchen", field="Ammeter", hours=3)
+                documents = query_database("Table1_virtual", topic="home_to_kitchen", field="Ammeter", hours=24)
                 consumption[device_name] = sum(map(float, documents)) if documents else 0
             max_device = max(consumption, key=consumption.get)
             return f"The device that consumed the most electricity is {max_device} with {consumption[max_device]:.2f} kWh."
-
         else:
             return "Invalid query."
-
     except Exception as e:
         return f"Error: Unable to process query. Details: {e}"
 

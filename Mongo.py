@@ -14,30 +14,23 @@ def query_to_list(cursor):
     return list(cursor)
 
 def query_database(collection_name, topic=None, field=None, hours=3):
-
     try:
         client = MongoClient(CONNECTION_URL, tlsCAFile=certifi.where())
         db = client[DB_NAME]
 
         # Access the specified collection
-        collection = db[collection_name]
-        print(f"Using collection: {collection_name}")
+        collection = db[SENSOR_TABLE]
+        print(f"Using collection: {SENSOR_TABLE}")
 
-        # Set time cutoff for filtering documents
-        time_cutoff = datetime.now() - timedelta(hours=hours)
-
-        # Query documents
+        end_time = datetime.utcnow()
+        start_time = end_time - timedelta(hours=hours)
         query = {
             "topic": topic,
-            "time.$date": {"$gte": time_cutoff.timestamp() * 1000}  # Convert to milliseconds
+            "time": {"$gte": start_time, "$lte": end_time},
+            f"payload.{field}": {"$exists": True}
         }
-        documents = query_to_list(collection.find(query))
-
-        if field:
-            # Extract only the specified field if provided
-            documents = [doc.get("payload", {}).get(field) for doc in documents if "payload" in doc]
-
-        return documents
+        documents = collection.find(query)
+        return [doc["payload"][field] for doc in documents]
 
     except Exception as e:
         print("Error: Unable to connect or query MongoDB.")
