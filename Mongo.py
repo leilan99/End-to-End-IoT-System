@@ -1,14 +1,14 @@
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-import certifi  # pip install certifi
+import certifi 
 
 # Constants
 DB_NAME = "test"  # Change to your database name
 CONNECTION_URL = (
     "mongodb+srv://leilanunez01:csulbCECS327@cluster0.q6mnv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 )  # Replace with your database URL
-SENSOR_TABLE = "sensor data"  # Change this to your sensor data table
-TIME_CUTOFF_MINUTES = 0  # Set how many minutes to allow for filtering
+SENSOR_TABLE = "Table1_virtual"  #Sensor table data
+TIME_CUTOFF_MINUTES = 0  #minutes of filtering
 
 def query_to_list(cursor):
     """Convert a MongoDB query cursor to a list."""
@@ -17,7 +17,6 @@ def query_to_list(cursor):
 def query_database():
     """Query the database for sensor data."""
     try:
-        # Connect to MongoDB
         client = MongoClient(CONNECTION_URL, tlsCAFile=certifi.where())
         db = client[DB_NAME]
 
