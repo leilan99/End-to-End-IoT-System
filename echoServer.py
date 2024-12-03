@@ -3,6 +3,11 @@
 import socket
 import ipaddress
 import errno
+import pytz
+import Mongo
+from datetime import datetime
+from typing import List
+
 
 def set_port():
     # Bind socket to the IP address and server port
@@ -31,9 +36,31 @@ def listen_tcp(ip, port):
     print(f"Server: {ip}:{port} - Listening...")
     return TCPSocket
 
-def connect_data() -> []:
-    import MongoDBConnection as mongo
-    return mongo.QueryDatabase();
+def connect_data() -> List:
+    return Mongo.query_database();
+
+def convert_to_rh(moisture):
+    return moisture * 0.75
+
+def convert_to_imperial_units(data):
+    data['value'] = data['value'] * 0.264172  # Example: converting liters to gallons
+    return data
+
+def process_data(data):
+    processed_data = []
+    for item in data:
+        sensor_id, value, data_source_type, timestamp = item
+        if data_source_type == 'moisture':
+            value = convert_to_rh(value)
+        item_dict = {
+            'sensor_id': sensor_id,
+            'value': value,
+            'data_source_type': data_source_type,
+            'timestamp': timestamp.astimezone(pytz.timezone('US/Pacific'))
+        }
+        item_dict = convert_to_imperial_units(item_dict)
+        processed_data.append(item_dict)
+    return processed_data
 
 def main():
     # Print a message indicating the server is starting
@@ -62,9 +89,10 @@ def main():
 
         # Receive server data
         serverData = connect_data()
+        processedData = process_data(serverData)
         
         # Send the message back to the client, converted to uppercase
-        incomingSocket.sendall(str(serverData).encode())
+        incomingSocket.sendall(str(processedData).encode())
 
     # Close the connection to the client
     incomingSocket.close()

@@ -2,7 +2,7 @@ import socket
 
 MAX_PACKET_SIZE = 1024
 DEFAULT_PORT = 12345  # Change this to your expected port
-SERVER_IP = '192.168.1.1'  # Change this to your server IP
+SERVER_IP = '0.0.0.0' # Change this to your server IP
 
 def get_tcp_port():
     """Prompt the user for a TCP port, with a fallback to the default port."""
