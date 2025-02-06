@@ -1,4 +1,4 @@
-# CECS 327 S01 - Assignment 8: Build an End-to-End IoT System
+# Build an End-to-End IoT System
 
 ## Overview
 This project is an end-to-end IoT system integrating a TCP client/server, a database, and IoT sensor data to process user queries. Metadata for IoT devices is used to enhance functionality. The system performs calculations and unit conversions and delivers results in response to user queries.
